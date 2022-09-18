@@ -26,14 +26,17 @@ int main(int argc, char* argv[]) {
 		int N = 0;
 		char c = getchar();
 
+		//utilizzato per testare le funzioni ausiliarie per le liste
+		/*
 		proc* p1 = set_proc(1, 's', 1, 0.0, 0.0);
 		proc* p2 = set_proc(2, 's', 1, 0.0, 0.0);
 		proc* p3 = set_proc(3, 's', 1, 0.0, 0.0);
 		proc* p4 = set_proc(4, 's', 1, 0.0, 0.0);
-
+		
 		proc_list* l = (proc_list*)malloc(sizeof(proc_list));
 		list_init(l);
-
+		*/
+		
 		if (c != '\n' && N <= 2) {
 			cmd[N++] = c;
 			c = getchar();
