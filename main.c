@@ -1,6 +1,6 @@
 #include "libs.h"
 
-//	Variabili globali
+//Variabili globali
 proc_list running_list;
 proc_list zombie_list;
 proc_list waiting_list;
@@ -128,9 +128,6 @@ int main(int argc, char* argv[]) {
 	//.
 	//Chiusura della directory /proc
 	//.
-	
-	//.
-	//Chiusura della shell
 
 }
 
