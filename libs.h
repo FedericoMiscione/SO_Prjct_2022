@@ -82,3 +82,5 @@
     extern int is_NaN(const char* s);           //probabilmente inutile
     extern void local_time();                   
     extern void file_reader(const char* path);  //probabilmente inutile
+
+    char* read_row(FILE* fd, int row);

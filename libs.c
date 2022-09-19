@@ -62,33 +62,35 @@ void file_reader(const char* path) {
 
 
 //Funzioni legate alla struttura dati 'proc'
+//Restituisce il PID del processo p
 int getPID(const proc* p) {
     return p->pid;
 }
-
+//Restituisce lo status del processo p
 char getStatus(const proc* p) {
     return p->status;
 }
-
+//Restituisce la priorità del processo p
 long getPriority(const proc* p) {
     return p->priority;
 }
-
+//Restituisce l'utilizzo della CPU da parte del processo p
 float getCPUUsage(const proc* p) {
     return p->cpu_u;
 }
-
+//Restituisce l'utilizzo della memoria da parte del processo p
 float getMemUsage(const proc* p) {
     return p->mem_u;
 }
-
+//Restituisce l'eventuale predecessore del processo p
 proc* getPrev(const proc* p) {
-    return p->prev;
+    if (p->prev) return p->prev;
+    else return NULL;
 }
-
-
+//Restituisce l'eventuale successore del processo p
 proc* getNext(const proc* p) {
-    return p->next;
+    if (p->next) return p->next;
+    else return NULL;
 }
 
 //DA MODIFICARE dato che le info dei processi vengono prelevate da file
@@ -131,6 +133,7 @@ void list_printer(proc_list* l) {
 
 }
 
+//Ricerca del processo p all'interno della lista l
 proc* proc_finder(const proc_list* l, proc* p) {
     proc* tmp = l->head;
     while(tmp) {
@@ -173,6 +176,7 @@ void insert(proc_list* l, proc* p) {
     free(tmp);
 }
 
+//Rimozione del processo p dalla proc_list l
 void remove_elem(proc_list* l, proc* p) {
     if (l->size == 0) {
         printf("La lista è vuota..\n\n");
@@ -199,6 +203,7 @@ void remove_elem(proc_list* l, proc* p) {
     free(tmp);
 }
 
+//Deallocazione di proc_list l
 void list_destroyer(proc_list* l) {
     proc* tmp = (proc*) malloc(sizeof(proc));
 
@@ -215,5 +220,67 @@ void list_destroyer(proc_list* l) {
         }
         else tmp = tmp->next;        
     }
+
+}
+
+//Lettura di riga #row nel file con file_descriptor fd 
+char* read_row(FILE* fd, int row) {
+
+    if (row <= 0) {
+        printf("Errore! La riga deve avere un valore maggiore di 0\n");
+        return NULL;
+    }
+
+    char* buf = (char*) malloc(1024*sizeof(char));
+
+    /* Opzione 1 --> Non funziona
+    char* c = (char*) malloc(sizeof(char)); 
+    int ret = 0;
+    int offset = 0;
+    int n_bytes = 0;
+
+    while(c[0] != EOF && row > 0) {
+        ret = read(fd, c, 1);
+        printf("ret: %d\n", ret);
+        if (ret == -1) perror("Errore in lettura file..");
+        offset++;
+        if (c[0] == '\n') {
+            row--;
+        }
+        if (row == 0) {
+            fd = lseek(fd, offset, 0);
+            ret = read(fd, c, 1);
+            printf("ret: %d\n", ret);
+            if (ret == -1) perror("Errore in lettura file..");
+            n_bytes++;
+            if (c[0] == '\n') {
+                ret = read(fd, buf, n_bytes);
+                printf("ret: %d\n", ret);
+                if (ret == -1) perror("Errore in lettura file..");
+                return buf;
+            }
+        }
+    }
+    */
+
+    //Opzione 2 --> funziona
+    char* res = (char*) malloc(1024*sizeof(char));
+
+    while(row > 0) {
+        res = fgets(buf, 1024, fd);
+        if (res == NULL) {
+            ferror(fd);
+            return NULL;
+        }
+        row--;
+    }
+
+    if (row == 0) return res;
+    
+    if (row > 0) printf("Errore! Il file ha numero di righe minore di %d\n", row);
+    return buf;
+
+    //DA MODIFICARE: Bisogna rimuovere l'intestazione del dato raccolto
+    //               [Es: Se su file si legge "PID = 1" bisogna raccogliere solo "1"]
 
 }

@@ -42,6 +42,10 @@ int main(int argc, char* argv[]) {
 			c = getchar();
 		}
 
+		//variabili utilizzata per testare le funzioni di raccolta dati dai file
+		char* buf[1024];
+		FILE* fd;
+
 		switch(*cmd) {
 
 			case 'q':
@@ -74,6 +78,23 @@ int main(int argc, char* argv[]) {
 
 				continue;
 			*/
+
+			//utilizzato per testare le funzioni di raccolta dati dai file
+			case 'f':
+				fd = fopen("/home/epicmusk/Scrivania/mio_file.txt", "r");
+				if (fd == NULL) {
+					perror("Errore in apertura file..");
+					exit(1);
+				}
+
+				*buf = read_row(fd, 2);
+				if (*buf != NULL) printf("%s", *buf);
+
+				if (fclose(fd) == EOF) {
+					perror("Errore in chiusura file...");
+					exit(1);
+				}
+				continue;
 
 			case 'k':
 				//KILLING PROCESS
