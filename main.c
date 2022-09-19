@@ -18,8 +18,8 @@ int main(int argc, char* argv[]) {
 	local_time();
 	printf(" || \n");
 	// uptime ***da rivedere***
-	file_reader("/proc/uptime");
-	printf(" ||\n");
+	//file_reader("/proc/uptime");
+	//printf(" ||\n");
 	
 	while(1) {
 		printf("Comando: ");
@@ -43,8 +43,10 @@ int main(int argc, char* argv[]) {
 		}
 
 		//variabili utilizzata per testare le funzioni di raccolta dati dai file
+		/*
 		char* buf[1024];
 		FILE* fd;
+		*/
 
 		switch(*cmd) {
 
@@ -80,6 +82,7 @@ int main(int argc, char* argv[]) {
 			*/
 
 			//utilizzato per testare le funzioni di raccolta dati dai file
+			/*
 			case 'f':
 				fd = fopen("/home/epicmusk/Scrivania/mio_file.txt", "r");
 				if (fd == NULL) {
@@ -95,6 +98,7 @@ int main(int argc, char* argv[]) {
 					exit(1);
 				}
 				continue;
+			*/
 
 			case 'k':
 				//KILLING PROCESS
