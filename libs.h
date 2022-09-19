@@ -26,6 +26,10 @@
 #define NOT_FOUND -1    //potrebbe essere inutile
 #define READ_ERROR -1   //potrebbe essere inutile
 
+//DA MODIFICARE: la macro non deve portare alla terminazione del programma,
+//               ma solamente notificare il problema proseguendo l'esecuzione del software
+//macro per la gestione degli errori
+#define errors_handler(msg) do {perror(msg); exit(1);} while(0)
 
 //strutture dati
 
@@ -83,4 +87,4 @@
     extern void local_time();                   
     extern void file_reader(const char* path);  //probabilmente inutile
 
-    char* read_row(FILE* fd, int row);
+    char* read_row(FILE* fd, int row /*, char* info */);

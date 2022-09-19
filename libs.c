@@ -224,7 +224,7 @@ void list_destroyer(proc_list* l) {
 }
 
 //Lettura di riga #row nel file con file_descriptor fd 
-char* read_row(FILE* fd, int row) {
+char* read_row(FILE* fd, int row /*, char* info */ ) {
 
     if (row <= 0) {
         printf("Errore! La riga deve avere un valore maggiore di 0\n");
@@ -275,12 +275,23 @@ char* read_row(FILE* fd, int row) {
         row--;
     }
 
-    if (row == 0) return res;
-    
+    //DA MODIFICARE: Bisogna rimuovere l'eventuale intestazione del dato raccolto
+    //               [Es: Se su file si legge "PID = 1" bisogna raccogliere solo "1"]
+    //potenziale idea n.1 --> funziona
+    /*
+    if (row == 0) {
+        if (strstr(buf, info)) {
+            int i = 0;
+            while(i < strlen(info)) {
+                buf[i] = buf[i + strlen(info)];
+                i++;
+            }
+        }
+        return buf;
+    }
+    */
+
     if (row > 0) printf("Errore! Il file ha numero di righe minore di %d\n", row);
     return buf;
-
-    //DA MODIFICARE: Bisogna rimuovere l'intestazione del dato raccolto
-    //               [Es: Se su file si legge "PID = 1" bisogna raccogliere solo "1"]
 
 }

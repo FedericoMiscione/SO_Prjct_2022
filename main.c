@@ -85,18 +85,12 @@ int main(int argc, char* argv[]) {
 			/*
 			case 'f':
 				fd = fopen("/home/epicmusk/Scrivania/mio_file.txt", "r");
-				if (fd == NULL) {
-					perror("Errore in apertura file..");
-					exit(1);
-				}
+				if (fd == NULL) errors_handler("Errore in apertura file..");
 
 				*buf = read_row(fd, 2);
 				if (*buf != NULL) printf("%s", *buf);
 
-				if (fclose(fd) == EOF) {
-					perror("Errore in chiusura file...");
-					exit(1);
-				}
+				if (fclose(fd) == EOF) errors_handler("Errore in chiusura file...");
 				continue;
 			*/
 
