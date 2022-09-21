@@ -27,9 +27,10 @@
 #define READ_ERROR -1   //potrebbe essere inutile
 
 //DA MODIFICARE: la macro non deve portare alla terminazione del programma,
-//               ma solamente notificare il problema proseguendo l'esecuzione del software
+//               ma (se possibile) solamente notificare il problema proseguendo
+//               l'esecuzione del software, altrimenti eliminare la macro
 //macro per la gestione degli errori
-#define errors_handler(msg) do {perror(msg); exit(1);} while(0)
+#define errors_handler(msg) do {perror(msg); exit(EXIT_FAILURE);} while(0)
 
 //strutture dati
 
