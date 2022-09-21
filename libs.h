@@ -45,16 +45,12 @@
         struct proc* next;
     } proc;
 
-    //Lista di processi o...
-    
+    //Lista di processi    
     typedef struct proc_list {
         proc* head;
         proc* tail;
         int size;
     } proc_list;
-
-
-    //...è più efficiente un array di processi???
 
 
 //prototipi
