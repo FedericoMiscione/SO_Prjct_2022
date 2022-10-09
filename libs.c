@@ -1,7 +1,7 @@
 #include "libs.h"
 
 //Funzione che stampa l'orario attuale
-void local_time() {
+void local_time () {
     int h, min, sec;
     time_t t;
     //orario attuale
@@ -62,36 +62,36 @@ void file_reader(const char* path) {
 
 
 //Funzioni legate alla struttura dati 'proc'
-//Restituisce il PID del processo p
 int getPID(const proc* p) {
     return p->pid;
 }
-//Restituisce lo status del processo p
+
 char getStatus(const proc* p) {
     return p->status;
 }
-//Restituisce la priorità del processo p
+
 long getPriority(const proc* p) {
     return p->priority;
 }
-//Restituisce l'utilizzo della CPU da parte del processo p
+
 float getCPUUsage(const proc* p) {
     return p->cpu_u;
 }
-//Restituisce l'utilizzo della memoria da parte del processo p
+
 float getMemUsage(const proc* p) {
     return p->mem_u;
 }
-//Restituisce l'eventuale predecessore del processo p
+
 proc* getPrev(const proc* p) {
     if (p->prev) return p->prev;
     else return NULL;
 }
-//Restituisce l'eventuale successore del processo p
+
 proc* getNext(const proc* p) {
     if (p->next) return p->next;
     else return NULL;
 }
+
 
 //DA MODIFICARE dato che le info dei processi vengono prelevate da file
 //N.B.: implementazione momentanea per testare il corretto funzionamento dei metodi delle liste
@@ -108,7 +108,6 @@ proc* set_proc(pid_t pid, char status, long priority, float cpu_u, float mem_u) 
     return p;
 }
 
-//Inizializzazione lista vuota
 void list_init(proc_list* l)  {
     l->head = NULL;
     l->tail = NULL;
@@ -120,20 +119,18 @@ void list_init(proc_list* l)  {
 void list_printer(proc_list* l) {
     if (l->size == 0) {
         printf("La lista è vuota...\n\n");
-        return;
-    }
-
-    proc* tmp = l->head;
-    while(tmp) {
-        printf("PID: %d | status: %c | priority: %lu | cpu_u: %.2f | mem_u: %.2f\n", tmp->pid, tmp->status, tmp->priority, tmp->cpu_u, tmp->mem_u);
-        tmp = tmp->next;
+    } else {
+        proc* tmp = l->head;
+        while(tmp) {
+            printf("PID: %d | status: %c | priority: %lu | cpu_u: %.2f | mem_u: %.2f\n", tmp->pid, tmp->status, tmp->priority, tmp->cpu_u, tmp->mem_u);
+            tmp = tmp->next;
+        }
     }
 
     printf("\n");
 
 }
 
-//Ricerca del processo p all'interno della lista l
 proc* proc_finder(const proc_list* l, proc* p) {
     proc* tmp = l->head;
     while(tmp) {
@@ -143,10 +140,10 @@ proc* proc_finder(const proc_list* l, proc* p) {
     return NULL;
 }
 
-//Inserimento di processo in coda alla lista
 void insert(proc_list* l, proc* p) {
 
     if (l->size == 0) {
+        l->head = (proc*)malloc(sizeof(proc));
         l->head = p;
         l->head->next = NULL;
         l->tail = l->head;
@@ -168,6 +165,7 @@ void insert(proc_list* l, proc* p) {
         if (tmp->next == NULL) {
             p->prev = tmp;
             tmp->next = p;
+            l->tail = p;
             l->size++;
             return;
         } else tmp = tmp->next;
@@ -176,7 +174,6 @@ void insert(proc_list* l, proc* p) {
     free(tmp);
 }
 
-//Rimozione del processo p dalla proc_list l
 void remove_elem(proc_list* l, proc* p) {
     if (l->size == 0) {
         printf("La lista è vuota..\n\n");
@@ -193,9 +190,9 @@ void remove_elem(proc_list* l, proc* p) {
             proc* next = tmp->next;
             if (prev != NULL) prev->next = next;
             if (next != NULL) next->prev = prev;
+            if (tmp == l->tail) l->tail = prev;
             l->size--;
             free(tmp);
-            return;
         }
         tmp = tmp->next;
     }
@@ -203,28 +200,33 @@ void remove_elem(proc_list* l, proc* p) {
     free(tmp);
 }
 
-//Deallocazione di proc_list l
 void list_destroyer(proc_list* l) {
-    proc* tmp = (proc*) malloc(sizeof(proc));
-
+    
     if (l->size == 0) {
         printf("La lista è vuota..\n\n");
         return;
     }
 
+    proc* tmp = (proc*) malloc(sizeof(proc));
     tmp = l->head;
     while(tmp) {
+                     
         if (tmp->next == NULL) {
             remove_elem(l, tmp);
+            if (l->size == 0) l->head = NULL;
             tmp = tmp->prev;
-        }
-        else tmp = tmp->next;        
-    }
+        } else tmp = tmp->next;
+               
+    } 
 
 }
 
-//Lettura di riga #row nel file con file_descriptor fd 
-char* read_row(FILE* fd, int row /*, char* info */ ) {
+proc_list* sort(proc_list* l) {
+    //COMPLETARE
+    return l;
+}
+
+char* read_row(int fd, int row, char* info) {
 
     if (row <= 0) {
         printf("Errore! La riga deve avere un valore maggiore di 0\n");
@@ -233,63 +235,63 @@ char* read_row(FILE* fd, int row /*, char* info */ ) {
 
     char* buf = (char*) malloc(1024*sizeof(char));
 
-    /* Opzione 1 --> Non funziona
+    // Opzione 1 --> Non funziona
     char* c = (char*) malloc(sizeof(char)); 
     int ret = 0;
     int offset = 0;
     int n_bytes = 0;
 
-    while(c[0] != EOF && row > 0) {
+    while(c[0] != ' ') {
         ret = read(fd, c, 1);
-        printf("ret: %d\n", ret);
+        //printf("ret: %d\n", ret);
         if (ret == -1) perror("Errore in lettura file..");
         offset++;
-        if (c[0] == '\n') {
-            row--;
-        }
-        if (row == 0) {
+        row--;
+    }
+
+    while (row == 0) {
             fd = lseek(fd, offset, 0);
             ret = read(fd, c, 1);
-            printf("ret: %d\n", ret);
-            if (ret == -1) perror("Errore in lettura file..");
+            //printf("ret: %d\n", ret);
+            if (ret == -1) {
+                if (errno == EINTR) continue;
+                else perror("Errore in lettura file..");
+            }
             n_bytes++;
-            if (c[0] == '\n') {
+            if (c[0] == ' ') {
                 ret = read(fd, buf, n_bytes);
-                printf("ret: %d\n", ret);
+                //printf("ret: %d\n", ret);
                 if (ret == -1) perror("Errore in lettura file..");
                 return buf;
             }
         }
-    }
-    */
 
     //Opzione 2 --> funziona
-    char* res = (char*) malloc(1024*sizeof(char));
+    
+    // char* res = (char*) malloc(1024*sizeof(char));
 
-    while(row > 0) {
-        res = fgets(buf, 1024, fd);
-        if (res == NULL) {
-            ferror(fd);
-            return NULL;
-        }
-        row--;
-    }
+    // while(row > 0) {
+    //     res = fgets(buf, 1024, fd);
+    //     if (res == NULL) {
+    //         ferror(fd);
+    //         return NULL;
+    //     }
+    //     row--;
+    // }
 
     //DA MODIFICARE: Bisogna rimuovere l'eventuale intestazione del dato raccolto
-    //               [Es: Se su file si legge "PID = 1" bisogna raccogliere solo "1"]
+    //              [Es: Se su file si legge "PID = 1" bisogna raccogliere solo "1"]
     //potenziale idea n.1 --> funziona
-    /*
-    if (row == 0) {
-        if (strstr(buf, info)) {
-            int i = 0;
-            while(i < strlen(info)) {
-                buf[i] = buf[i + strlen(info)];
-                i++;
-            }
-        }
-        return buf;
-    }
-    */
+    // if (row == 0) {
+    //     if (strstr(buf, info)) {
+    //         int i = 0;
+    //         while(i < strlen(info)) {
+    //             buf[i] = buf[i + strlen(info)];
+    //             i++;
+    //         }
+    //     }
+    //     return buf;
+    // }
 
     if (row > 0) printf("Errore! Il file ha numero di righe minore di %d\n", row);
     return buf;

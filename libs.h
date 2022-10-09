@@ -59,29 +59,48 @@
 
     //struct proc
     /* definiti nel modulo libs.c */
+    
+    //Restituisce il PID del proc p
     pid_t getPID(const proc* p);
+    //Restituisce lo status del proc p
     char getStatus(const proc* p);
+    //Restituisce la priorità del proc p
     long getPriority(const proc* p);
+    //Restituisce l'utilizzo della CPU da parte del proc p
     float getCPUUsage(const proc* p);
+    //Restituisce l'utilizzo della memoria da parte del proc p
     float getMemUsage(const proc* p);
+    //Restituisce l'eventuale predecessore del proc p
     proc* getPrev(const proc* p);
+    //Restituisce l'eventuale successore del proc p
     proc* getNext(const proc* p);
 
-    //forse potrebbero essere implementate in un unico metodo
+    //Imposta i valori degli attributi del proc
     proc* set_proc(pid_t pid, char status, long priority, float cpu_u, float mem_u);
+    //Imposta il valore dell'attributo 'position' del processo proc
+    void setPosition(const proc_list* l, proc* p);
     
     //struct proc_list
     /*funzioni caratteristiche delle liste*/
+
+    //Inizializzazione lista vuota
     void list_init(proc_list* l);
+    //Ricerca del processo p all'interno della proc_list l
     proc* proc_finder(const proc_list* l, proc* p);
+    //Inserimento in coda del proc p in proc_list l [riportare a void]
     void insert(proc_list* l, proc* p);
+    //Rimozione del proc p dalla proc_list l [riportare a void]
     void remove_elem(proc_list* l, proc* p);
+    //Distruttore della proc_list l [riportare a void]
     void list_destroyer(proc_list* l);
+    //Stampa la proc_list l
     void list_printer(proc_list* l);
+    //Ordina la proc_list l
+    proc_list* sort(proc_list* l);
 
     //altro
-    extern int is_NaN(const char* s);           //probabilmente inutile
-    extern void local_time();                   
-    extern void file_reader(const char* path);  //probabilmente inutile
+    int is_NaN(const char* s);           //probabilmente inutile
+    void local_time();                   
+    void file_reader(const char* path);  //probabilmente inutile
 
-    char* read_row(FILE* fd, int row /*, char* info */);
+    char* read_row(int fd, int row, char* info);
