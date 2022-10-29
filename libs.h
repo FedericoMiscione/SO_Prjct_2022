@@ -1,9 +1,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 #include <sys/types.h>
+#include <sys/sysinfo.h>
 
 // directory
 #include <dirent.h>
@@ -14,31 +16,34 @@
 #include  <sys/stat.h>	
 #include <unistd.h>	
 
-#include <string.h>
+#include <signal.h>
 
 #include <time.h>
 
-//define
 #define TRUE 0
 #define FALSE -1
-#define SUCCESS 0
-#define FAILURE -1
-#define NOT_FOUND -1    //potrebbe essere inutile
-#define READ_ERROR -1   //potrebbe essere inutile
+//define di possibili option per la funzione proc_finder
+#define NO_OPT -1
+#define PID_FNDR 1
 
-//DA MODIFICARE: la macro non deve portare alla terminazione del programma,
-//               ma (se possibile) solamente notificare il problema proseguendo
-//               l'esecuzione del software, altrimenti eliminare la macro
-//macro per la gestione degli errori
-#define errors_handler(msg) do {perror(msg); exit(EXIT_FAILURE);} while(0)
+#define MAX_BUFFER_DIM 1024
+
+#define ONE_KiB 1024         // 1 KiB
+#define ONE_MiB 1048576      // 1 MiB
+
+#define print_error(msg)   do { perror(msg); printf("\n"); } while(0)
 
 //strutture dati
 
     //Processo
     typedef struct proc {
         pid_t pid;
+        char* command;
         char status;
+        int group_id;
         long priority;
+        unsigned long vsize;
+        long int rss;
         float cpu_u;
         float mem_u;
         struct proc* prev;
@@ -74,19 +79,19 @@
     proc* getPrev(const proc* p);
     //Restituisce l'eventuale successore del proc p
     proc* getNext(const proc* p);
+    //Stampa il proc p
+    void proc_printer(const proc* p);
 
-    //Imposta i valori degli attributi del proc
-    proc* set_proc(pid_t pid, char status, long priority, float cpu_u, float mem_u);
-    //Imposta il valore dell'attributo 'position' del processo proc
-    void setPosition(const proc_list* l, proc* p);
-    
+    //Setta i valori degli attributi del proc
+    proc* setProc(char** fields);// proc* setProc(char** fields, char** mem_info);
+        
     //struct proc_list
     /*funzioni caratteristiche delle liste*/
 
     //Inizializzazione lista vuota
     void list_init(proc_list* l);
     //Ricerca del processo p all'interno della proc_list l
-    proc* proc_finder(const proc_list* l, proc* p);
+    proc* proc_finder(const proc_list* l, proc* p, int option);
     //Inserimento in coda del proc p in proc_list l [riportare a void]
     void insert(proc_list* l, proc* p);
     //Rimozione del proc p dalla proc_list l [riportare a void]
@@ -98,9 +103,19 @@
     //Ordina la proc_list l
     proc_list* sort(proc_list* l);
 
-    //altro
-    int is_NaN(const char* s);           //probabilmente inutile
-    void local_time();                   
-    void file_reader(const char* path);  //probabilmente inutile
+    //Verifica che una directory nel filesystem '/proc' rappresenta un processo
+    int is_PIDFolder(char* path, int* pid);
+    //Lettura dei campi di interesse con posizione contenuta in field_pos dal file con filename path 
+    char** read_fields_from_file(char* path, int* field_pos, int lenght);
+    //Restituisce la proc_list di tutti i processi presenti nel filesystem '/proc'
+    proc_list* listing_proc();    
+    //Classifica i processi in base al proprio stato
+    void tasks_info(const proc_list* src);
 
-    char* read_row(int fd, int row, char* info);
+    //Stampa a terminale l'ora locale
+    void local_time();
+    //Stampa le informazioni di sistema [uptime, mem stats, swap stats]
+    void get_sys_info(struct sysinfo *info);
+
+    //Handler di segnali
+    void signal_handler(int signal);

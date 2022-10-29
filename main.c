@@ -1,136 +1,166 @@
 #include "libs.h"
 
-//Variabili globali
-proc_list running_list;
-proc_list zombie_list;
-proc_list waiting_list;
-
-
 int main(int argc, char* argv[]) {
 
-    int pageSize = getpagesize();
-	printf("Memory page size : %d\n\n",pageSize);
-	//getchar();
-	char cmd[2]; //Dimensione della stringa da valutare in base ai comandi che possono essere eseguiti 
-				 //[Per ora sarebbe sufficiente un char]
+	pid_t pid;
+	proc_list* l = (proc_list*)malloc(sizeof(proc_list));
+	l = listing_proc();
+
+	struct sysinfo info;
+    sysinfo(&info);
 
 	printf("Top || ");
 	local_time();
-	printf(" || \n");
-	// uptime ***da rivedere***
-	//file_reader("/proc/uptime");
-	//printf(" ||\n");
+	get_sys_info(&info);
+	printf("Tasks: %d -> ", l->size);
+	tasks_info(l);
+
+	printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
 	
 	while(1) {
-		printf("Comando: ");
-		int N = 0;
-		char c = getchar();
+		char cmd = getchar();
 
-		//utilizzato per testare le funzioni ausiliarie per le liste
-		/*
-		proc* p1 = set_proc(1, 's', 1, 0.0, 0.0);
-		proc* p2 = set_proc(2, 's', 1, 0.0, 0.0);
-		proc* p3 = set_proc(3, 's', 1, 0.0, 0.0);
-		proc* p4 = set_proc(4, 's', 1, 0.0, 0.0);
-		
-		proc_list* l = (proc_list*)malloc(sizeof(proc_list));
-		list_init(l);
-		*/
-		
-		if (c != '\n' && N <= 2) {
-			cmd[N++] = c;
-			c = getchar();
-		}
+		switch (cmd) {
 
-		//variabili utilizzata per testare le funzioni di raccolta dati dai file
-		/*
-		char* buf[1024];
-		FILE* fd;
-		*/
+			case '\n':
+				l = listing_proc();
+				printf("Top || ");
+				local_time();
+				get_sys_info(&info);
+				printf("Tasks: %d -> ", l->size);
+				tasks_info(l);
+				printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
+				continue;
 
-		switch(*cmd) {
+			case 'f':
+				l = listing_proc();
+				printf("Inserire il PID del processo: ");
+				proc* p = (proc*) malloc(sizeof(proc));
+				scanf("%d", &(p->pid));
+				p = proc_finder(l, p, PID_FNDR);
+				if (p != NULL) proc_printer(p);
+				else printf("Processo non trovato!\n");
+				break;
 
-			case 'q':
+			case 'p':
+				l = listing_proc();
+				list_printer(l);
+				break;
+
+			case'q':
 				printf("Chiusura del programma TOP...\n");
 				return 0;
 
-			//utilizzato per testare le funzioni ausiliarie per le liste
-			/*
-			case 'c':
-
-				list_destroyer(l);
-
-				remove_elem(l, p4);
-				list_printer(l);
-
-				insert(l, p1);
-				insert(l, p3);
-				insert(l, p4);
-				insert(l, p2);
-				list_printer(l);
-
-				remove_elem(l, p4);
-				list_printer(l);
-
-				remove_elem(l, p2);
-				list_printer(l);
-
-				list_destroyer(l);
-				list_printer(l);
-
+			case 'h':
+				printf("\nElenco dei comandi:\n");
+				printf("> f: Ricerca il processo con PID scelto\n");
+				printf("> k: Invia il segnale kill al processo con PID scelto\n");
+				printf("> p: Stampa la lista dei processi\n"); // Temporaneo
+				printf("> q: Termina il programma TOP\n");
+				printf("> r: Riavvia il processo con PID scelto\n");
+				printf("> s: Sospende il processo con PID scelto\n");
+				printf("> t: Termina il processo con PID scelto\n\n");
 				continue;
-			*/
-
-			//utilizzato per testare le funzioni di raccolta dati dai file
-			/*
-			case 'f':
-				fd = fopen("/home/epicmusk/Scrivania/mio_file.txt", "r");
-				if (fd == NULL) errors_handler("Errore in apertura file..");
-
-				*buf = read_row(fd, 2);
-				if (*buf != NULL) printf("%s", *buf);
-
-				if (fclose(fd) == EOF) errors_handler("Errore in chiusura file...");
-				continue;
-			*/
 
 			case 'k':
 				//KILLING PROCESS
-				//.
-				//Richiedere PID del processo da terminare
-				//.
+
+				printf("Inserire il PID del processo: ");
+				scanf("%d", &pid);
+				
+				if (pid == getpid()) {
+
+					char opt;
+					printf("Sei sicuro di voler uccidere questo processo? ('y' or 'n') ");
+					scanf("%s", &opt);
+
+					if (opt == 'y') {
+						if (kill(pid, SIGKILL) == -1) {
+							if (errno == EINVAL || errno == EPERM || errno == ESRCH)
+								print_error("Errore");
+						} else 
+							printf("Processo %d ucciso con successo!\n\n", pid); 
+					} else printf("\n");
+
+				} else {
+					if (kill(pid, SIGKILL) == -1) {
+						if (errno == EINVAL || errno == EPERM || errno == ESRCH)
+							print_error("Errore");
+					} else 
+						printf("Processo %d ucciso con successo!\n\n", pid);
+				}
+
 				continue;
 
 			case 'r':
 				//RESTARTING PROCESS
-				//.
-				//Richiedere PID del processo da riavviare
-				//.
+
+				printf("Inserire il PID del processo: ");
+				scanf("%d", &pid);
+
+				if (kill(pid, SIGCONT) == -1) {
+					if (errno == EINVAL || errno == EPERM || errno == ESRCH) {
+						print_error("Errore");
+						printf("\n");
+					}
+				} else 
+					printf("Processo %d ripreso con successo!\n\n", pid);
+				
 				continue;
 
 			case 's':
 				//SUSPENDING PROCESS
-				//.
-				//Richiedere PID del processo da sospendere
-				//.
+
+				printf("Inserire il PID del processo: ");
+				scanf("%d", &pid);
+
+				if (kill(pid, SIGSTOP) == -1) {
+					if (errno == EINVAL || errno == EPERM || errno == ESRCH) {
+						print_error("Errore");
+						printf("\n");
+					}
+				} else 
+					printf("Processo %d messo in pausa con successo!\n\n", pid);
+
 				continue;
 
 			case 't':
 				//TERMINATING PROCESS
-				//.
-				//Richiedere PID del processo da terminare
-				//.
+
+				printf("Inserire il PID del processo: ");
+				scanf("%d", &pid);
+				
+				if (pid == getpid()) {
+
+					char opt;
+					printf("Sei sicuro di voler terminare questo processo? ('y' or 'n') ");
+					scanf("%s", &opt);
+
+					if (opt == 'y') {
+						if (kill(pid, SIGTERM) == -1) {
+							if (errno == EINVAL || errno == EPERM || errno == ESRCH)
+								print_error("Errore");
+						} else 
+							printf("Processo %d terminato con successo!\n\n", pid); 
+					} else printf("\n");
+
+				} else {
+					if (kill(pid, SIGTERM) == -1) {
+						if (errno == EINVAL || errno == EPERM || errno == ESRCH)
+							print_error("Errore");
+					} else 
+						printf("Processo %d terminato con successo!\n\n", pid);
+				}
+
 				continue;
 
 			default:
+				printf("\nComando selezionato non esistente..\n\n");
 				continue;
+
 		}
 
-
-
 	}
-
-	return 0;
 
 	//.
 	//Stampa sulla shell delle specifiche generali in intestazione di Top generico
@@ -147,6 +177,8 @@ int main(int argc, char* argv[]) {
 	//.
 	//Chiusura della directory /proc
 	//.
+
+	return 0;
 
 }
 
