@@ -18,18 +18,24 @@ void get_sys_info(struct sysinfo* info) {
     
     //uptime
     unsigned long uptime = info->uptime;
-    printf("|| up: %li ||\n", uptime);
+    printf(" || up %.2ld:%.2ld:%.2ld ||", uptime/3600, (uptime/60)%60, uptime%60);
+
+    //load averages
+    double loads[3];
+    getloadavg(loads, 3);
+    printf(" load averages: %.2f, %.2f, %.2f ||\n", loads[0], loads[1], loads[2]);
     
     //mem stats
     unsigned long total_mem = info->totalram;
     unsigned long free_mem = info->freeram;
     unsigned long buff_mem = info->bufferram;
-    printf("Mem Total: %.2lf MiB | Mem Free: %.2lf MiB | Buf: %.2lf MiB\n", (double) total_mem/ONE_MiB, (double) free_mem/ONE_MiB, (double) buff_mem/ONE_MiB);
+    printf("Mem:  total %8.2lf MiB | free %8.2lf MiB | buf %8.2lf MiB |\n", (double) total_mem/ONE_MiB, (double) free_mem/ONE_MiB, (double) buff_mem/ONE_MiB);
 
     //swap stats
     unsigned long total_swap = info->totalswap;
     unsigned long free_swap = info->freeswap;
-    printf("Swap Total: %.2lf MiB | Swap Free: %.2lf MiB\n", (double) total_swap/ONE_MiB, (double) free_swap/ONE_MiB);
+    unsigned long used_swap = total_swap - free_swap;
+    printf("Swap: total %8.2lf MiB | free %8.2lf MiB | used %7.2lf MiB |\n", (double) total_swap/ONE_MiB, (double) free_swap/ONE_MiB, (double) used_swap/ONE_MiB);
 
 }
 
@@ -64,8 +70,8 @@ proc* getNext(const proc* p) {
 }
 
 void proc_printer(const proc* p) {
-    printf("PID: %d | command: %s | status: %c | priority: %ld | group_ID: %d | virt: %lu KiB | rss: %ld KiB | cpu_u: %.2f %% | mem_u: %.2f %%\n", 
-                    p->pid, p->command, p->status, p->priority, p->group_id, p->vsize, p->rss, p->cpu_u, p->mem_u);
+    printf("\nPID: %5d | status: %2c | priority: %5ld | group_ID: %5d | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n\n", 
+                    p->pid, p->status, p->priority, p->group_id, p->vsize, p->rss, p->cpu_u, p->mem_u, p->command);
 }
 
 //DA RIVEDERE: cpu_usage dovrebbe essere corretto ma va controllato
@@ -120,15 +126,15 @@ void list_init(proc_list* l)  {
 }
 
 //DA MODIFICARE
-//Aggiungere elementi rilevanti per il programma e eventualmente cambiare precisione dei float
+//Aggiungere/rimuovere elementi rilevanti/non rilevanti per il programma e eventualmente cambiare precisione dei float
 void list_printer(proc_list* l) {
     if (l->size == 0) {
         printf("La lista è vuota...\n\n");
     } else {
         proc* tmp = l->head;
         while(tmp) {
-            printf("PID: %d | command: %s | status: %c | priority: %ld | group_ID: %d | virt: %lu KiB | rss: %ld KiB | cpu_u: %.2f %% | mem_u: %.2f %%\n", 
-                    tmp->pid, tmp->command, tmp->status, tmp->priority, tmp->group_id, tmp->vsize, tmp->rss, tmp->cpu_u,   tmp->mem_u);
+            printf("PID: %5d | status: %2c | priority: %5ld | group_ID: %5d | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n", 
+                    tmp->pid, tmp->status, tmp->priority, tmp->group_id, tmp->vsize, tmp->rss, tmp->cpu_u, tmp->mem_u, tmp->command);
             tmp = tmp->next;
         }
     }

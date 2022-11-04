@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
 				l = listing_proc();
 				printf("Top || ");
 				local_time();
+				sysinfo(&info);
 				get_sys_info(&info);
 				printf("Tasks: %d -> ", l->size);
 				tasks_info(l);
@@ -161,22 +162,6 @@ int main(int argc, char* argv[]) {
 		}
 
 	}
-
-	//.
-	//Stampa sulla shell delle specifiche generali in intestazione di Top generico
-	//.
-	//.
-	//.
-	//Stampa dei processi in /proc su shell
-	//.
-	//.
-	//.
-	//Implementazione dei comandi richiesti da specifiche
-	//.
-	//.
-	//.
-	//Chiusura della directory /proc
-	//.
 
 	return 0;
 
