@@ -3,8 +3,7 @@
 int main(int argc, char* argv[]) {
 
 	pid_t pid;
-	proc_list* l = (proc_list*)malloc(sizeof(proc_list));
-	l = listing_proc();
+	proc_list* l = listing_proc();
 
 	struct sysinfo info;
     sysinfo(&info);
@@ -16,7 +15,7 @@ int main(int argc, char* argv[]) {
 	tasks_info(l);
 
 	printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
-	
+
 	while(1) {
 		char cmd = getchar();
 
@@ -41,6 +40,7 @@ int main(int argc, char* argv[]) {
 				p = proc_finder(l, p, PID_FNDR);
 				if (p != NULL) proc_printer(p);
 				else printf("Processo non trovato!\n");
+				free(p);
 				break;
 
 			case 'p':

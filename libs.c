@@ -25,17 +25,21 @@ void get_sys_info(struct sysinfo* info) {
     getloadavg(loads, 3);
     printf(" load averages: %.2f, %.2f, %.2f ||\n", loads[0], loads[1], loads[2]);
     
+    //cpu stats
+    printf("%%CPU: ");
+    get_cpu_stats();
+
     //mem stats
     unsigned long total_mem = info->totalram;
     unsigned long free_mem = info->freeram;
     unsigned long buff_mem = info->bufferram;
-    printf("Mem:  total %8.2lf MiB | free %8.2lf MiB | buf %8.2lf MiB |\n", (double) total_mem/ONE_MiB, (double) free_mem/ONE_MiB, (double) buff_mem/ONE_MiB);
+    printf("Mem:  total %8.2lf MiB, free %8.2lf MiB, buf %8.2lf MiB\n", (double) total_mem/ONE_MiB, (double) free_mem/ONE_MiB, (double) buff_mem/ONE_MiB);
 
     //swap stats
     unsigned long total_swap = info->totalswap;
     unsigned long free_swap = info->freeswap;
     unsigned long used_swap = total_swap - free_swap;
-    printf("Swap: total %8.2lf MiB | free %8.2lf MiB | used %7.2lf MiB |\n", (double) total_swap/ONE_MiB, (double) free_swap/ONE_MiB, (double) used_swap/ONE_MiB);
+    printf("Swap: total %8.2lf MiB, free %8.2lf MiB, used %7.2lf MiB\n", (double) total_swap/ONE_MiB, (double) free_swap/ONE_MiB, (double) used_swap/ONE_MiB);
 
 }
 
@@ -70,8 +74,8 @@ proc* getNext(const proc* p) {
 }
 
 void proc_printer(const proc* p) {
-    printf("\nPID: %5d | status: %2c | priority: %5ld | group_ID: %5d | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n\n", 
-                    p->pid, p->status, p->priority, p->group_id, p->vsize, p->rss, p->cpu_u, p->mem_u, p->command);
+    printf("\nPID: %5d | status: %2c | priority: %5ld | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n\n", 
+                    p->pid, p->status, p->priority, p->vsize, p->rss, p->cpu_u, p->mem_u, p->command);
 }
 
 //DA RIVEDERE: cpu_usage dovrebbe essere corretto ma va controllato
@@ -82,21 +86,20 @@ proc* setProc(char** fields) {
     p->pid = atoi(fields[0]);
     p->command = fields[1];
     p->status = fields[2][0];
-    p->group_id = atoi(fields[3]);
-    p->priority = atol(fields[6]);
-    p->vsize = (strtoul(fields[8], NULL, 0))/ONE_KiB;
+    p->priority = atol(fields[5]);
+    p->vsize = (strtoul(fields[7], NULL, 0))/ONE_KiB;
 
     struct sysinfo info;
     sysinfo(&info);
     int clk_tck = sysconf(_SC_CLK_TCK);                             // Numero di clock ticks per secondo
 
-    unsigned long utime = strtoul(fields[4], NULL, 0);              // (*) base = 0 implica conversione in decimale
-    unsigned long stime = strtoul(fields[5], NULL, 0);              // (*)
+    unsigned long utime = strtoul(fields[3], NULL, 0);              // (*) base = 0 implica conversione in decimale
+    unsigned long stime = strtoul(fields[4], NULL, 0);              // (*)
     unsigned long ttime = utime + stime;                            // Moltiplicato x100 per riportare il valore in percentuale
     double ttime_s = ttime/clk_tck;                                 // Tempo totale del processo in secondi
 
     unsigned long uptime = info.uptime;                             // uptime in secondi
-    unsigned long long start_time = strtoull(fields[7], NULL, 0);   // (*)
+    unsigned long long start_time = strtoull(fields[6], NULL, 0);   // (*)
     double start_time_s = start_time/clk_tck;                       // start time del processo in
     unsigned long elapsed_time = uptime - start_time_s;
 
@@ -107,12 +110,11 @@ proc* setProc(char** fields) {
     long int total_mem = (long int) info.totalram;
 
     int page_size = getpagesize();
-    long int proc_pages = atol(fields[9]);
-    long int proc_mem = page_size*proc_pages;
+    long long int proc_pages = atol(fields[8]);
+    long long int proc_mem = page_size*proc_pages;
 
     double mem_usage = 0;
-    mem_usage = ((double) proc_mem) / ((double) total_mem);
-    mem_usage*=100;
+    mem_usage = ((double) proc_mem) / ((double) total_mem)*100;
     p->rss = proc_mem/ONE_KiB;
     p->mem_u = mem_usage;
     
@@ -133,8 +135,8 @@ void list_printer(proc_list* l) {
     } else {
         proc* tmp = l->head;
         while(tmp) {
-            printf("PID: %5d | status: %2c | priority: %5ld | group_ID: %5d | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n", 
-                    tmp->pid, tmp->status, tmp->priority, tmp->group_id, tmp->vsize, tmp->rss, tmp->cpu_u, tmp->mem_u, tmp->command);
+            printf("PID: %5d | status: %2c | priority: %5ld | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n", 
+                    tmp->pid, tmp->status, tmp->priority, tmp->vsize, tmp->rss, tmp->cpu_u, tmp->mem_u, tmp->command);
             tmp = tmp->next;
         }
     }
@@ -305,6 +307,32 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght) {
     return NULL;
 }
 
+void get_cpu_stats() {
+    char path[MAX_BUFFER_DIM];
+    snprintf(path, MAX_BUFFER_DIM, "/proc/stat");
+    int field_pos_stat[8] = {3, 4, 5, 6, 7, 8, 9, 10};
+    char** fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int));
+
+    unsigned long total_cpu_time = 0;
+    for (int i = 0; i < 8; i++) {
+        total_cpu_time += 100*atol(fields[i]);
+    }
+
+    int clk_tck = sysconf(_SC_CLK_TCK);
+
+    double user = (double) 100*clk_tck*atol(fields[0])/total_cpu_time;
+    double nice = (double) 100*clk_tck*atol(fields[1])/total_cpu_time;
+    double sys = (double) 100*clk_tck*atol(fields[2])/total_cpu_time;
+    double idle = (double) 100*clk_tck*atol(fields[3])/total_cpu_time;
+    double wait = (double) 100*clk_tck*atol(fields[4])/total_cpu_time;
+    double hi = (double) 100*clk_tck*atol(fields[5])/total_cpu_time;
+    double si = (double) 100*clk_tck*atol(fields[6])/total_cpu_time;
+    double steal = (double) 100*clk_tck*atol(fields[7])/total_cpu_time;
+
+    printf(" %3.2f us, %3.2f sy, %3.2f ni, %3.2f id, %3.2f wa, %3.2f hi, %3.2f si, %3.2f st\n", user, nice, sys, idle, wait, hi, si, steal);
+
+}
+
 proc_list* listing_proc() {
     DIR* dir;
     struct dirent* entry;
@@ -327,7 +355,7 @@ proc_list* listing_proc() {
 
             char path[MAX_BUFFER_DIM];
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/stat", pid);
-            int field_pos_stat[] = {1, 2, 3, 5, 14, 15, 18, 22, 23, 24};
+            int field_pos_stat[] = {1, 2, 3, 14, 15, 18, 22, 23, 24};
             char** proc_fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int));
 
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/statm", pid);

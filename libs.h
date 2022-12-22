@@ -40,7 +40,6 @@
         pid_t pid;
         char* command;
         char status;
-        int group_id;
         long priority;
         unsigned long vsize;
         long int rss;
@@ -55,12 +54,11 @@
         proc* head;
         proc* tail;
         int size;
+        char pad[40];        //padding to 64 bit
     } proc_list;
 
 
 //prototipi
-
-    //I metodi sono dichiarati extern perchè sono definiti in moduli esterni
 
     //struct proc
     /* definiti nel modulo libs.c */
@@ -116,6 +114,8 @@
     void local_time();
     //Stampa le informazioni di sistema [uptime, mem stats, swap stats]
     void get_sys_info(struct sysinfo *info);
+    //Stampa le statistiche riguardanti la CPU
+    void get_cpu_stats();
 
     //Handler di segnali
     void signal_handler(int signal);
