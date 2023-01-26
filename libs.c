@@ -272,11 +272,14 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght) {
         while (fgets(c, sizeof(c), fp) != NULL) {
                        
             file_position++;
+            char prev;
+
             if (strcmp(c, " ") == 0) {
 
                 for (int i = 0; i < lenght; i++) {
 
                     if (field_pos[i] == current_field_pos) {
+
                         fseek(fp, ++delim_pos, SEEK_SET);
                         int field_len = file_position - delim_pos - 1;
                         char* field = (char*) malloc((field_len + 1)*sizeof(char));
@@ -296,7 +299,7 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght) {
 
                 current_field_pos++;
                 delim_pos = file_position-1;
-            }
+            } else prev = c[0];
 
         }
 
