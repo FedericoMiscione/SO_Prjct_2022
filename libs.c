@@ -272,8 +272,7 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght) {
         while (fgets(c, sizeof(c), fp) != NULL) {
                        
             file_position++;
-            char prev;
-
+                
             if (strcmp(c, " ") == 0) {
 
                 for (int i = 0; i < lenght; i++) {
@@ -294,12 +293,11 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght) {
                         j++;
                         break;
                     }
-
                 }
 
                 current_field_pos++;
                 delim_pos = file_position-1;
-            } else prev = c[0];
+            }
 
         }
 
