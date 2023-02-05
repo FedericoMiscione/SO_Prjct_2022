@@ -18,7 +18,8 @@ void get_sys_info(struct sysinfo* info) {
     
     //uptime
     unsigned long uptime = info->uptime;
-    printf(" || up %.2ld:%.2ld:%.2ld ||", uptime/3600, (uptime/60)%60, uptime%60);
+    if (uptime/3600 < 24) printf(" || up %.2ld:%.2ld:%.2ld ||", uptime/3600, (uptime/60)%60, uptime%60);
+    else printf(" || up %d days ||", (int) (uptime/3600)/24);
 
     //load averages
     double loads[3];
@@ -29,18 +30,26 @@ void get_sys_info(struct sysinfo* info) {
     printf("%%CPU: ");
     get_cpu_stats();
 
+    int fields_pos[] = {1, 2, 3, 4, 5, 15, 16, 24};
+    char** mem_stats = read_fields_from_file("/proc/meminfo", fields_pos, sizeof(fields_pos)/sizeof(int), "\n");
+
     //mem stats
-    unsigned long total_mem = info->totalram;
-    unsigned long free_mem = info->freeram;
-    unsigned long buff_mem = info->bufferram;
-    printf("Mem:  total %8.2lf MiB, free %8.2lf MiB, buf %8.2lf MiB\n", (double) total_mem/ONE_MiB, (double) free_mem/ONE_MiB, (double) buff_mem/ONE_MiB);
+    double total_mem = (double) atol(strtok(strtok(strtok(mem_stats[0], "MemTotal:"), "kB"), " "))/ONE_KiB;
+    double free_mem = (double) atol(strtok(strtok(strtok(mem_stats[1], "MemFree:"), "kB"), " "))/ONE_KiB;
+    double buff_mem = (double) atol(strtok(strtok(strtok(mem_stats[3], "Buffers:"), "kB"), " "))/ONE_KiB;
+    double cached_mem = (double) atol(strtok(strtok(strtok(mem_stats[4], "Cached:"), "kB"), " "))/ONE_KiB;
+    double srecl_mem = (double) atol(strtok(strtok(strtok(mem_stats[7], "SReclaimable:"), "kB"), " "))/ONE_KiB;
+    double cach_buff = cached_mem + srecl_mem + buff_mem;
+    double used_mem = total_mem - free_mem - cach_buff;
+    printf("Mem:  total %8.2lf MiB, free %8.2lf MiB, used %8.2lf MiB, buf/cache %8.2lf MiB\n", total_mem, free_mem, used_mem, cach_buff);
 
     //swap stats
-    unsigned long total_swap = info->totalswap;
-    unsigned long free_swap = info->freeswap;
-    unsigned long used_swap = total_swap - free_swap;
-    printf("Swap: total %8.2lf MiB, free %8.2lf MiB, used %7.2lf MiB\n", (double) total_swap/ONE_MiB, (double) free_swap/ONE_MiB, (double) used_swap/ONE_MiB);
-
+    double total_swap = (double) atol(strtok(strtok(strtok(mem_stats[5], "SwapTotal:"), "kB"), " "))/ONE_KiB;
+    double free_swap = (double) atol(strtok(strtok(strtok(mem_stats[6], "SwapFree:"), "kB"), " "))/ONE_KiB;
+    double used_swap = total_swap - free_swap;
+    unsigned long avail_mem = atol(strtok(strtok(strtok(mem_stats[2], "MemAvailable:"), "kB"), " "))/ONE_KiB;
+    printf("Swap: total %8.2lf MiB, free %8.2lf MiB, used %7.2lf MiB. ", total_swap, free_swap, used_swap);
+    printf("Avail Mem: %8.2lf MiB\n", (double) avail_mem);
 }
 
 int getPID(const proc* p) {
@@ -78,7 +87,6 @@ void proc_printer(const proc* p) {
                     p->pid, p->status, p->priority, p->vsize, p->rss, p->cpu_u, p->mem_u, p->command);
 }
 
-//DA RIVEDERE: cpu_usage dovrebbe essere corretto ma va controllato
 proc* setProc(char** fields) {
 
     proc* p = (proc*)malloc(sizeof(proc));
@@ -238,11 +246,6 @@ void list_destroyer(proc_list* l) {
 
 }
 
-//DA COMPLETARE
-proc_list* sort(proc_list* l) {
-    return l;
-}
-
 int is_PIDFolder(char* path, int* pid) {
     int i = 0;
     const int lenght = strlen(path);
@@ -258,47 +261,55 @@ int is_PIDFolder(char* path, int* pid) {
     return 1;
 }
 
-char** read_fields_from_file(char* path, int* field_pos, int lenght) {
+char** read_fields_from_file(char* path, int* field_pos, int lenght, char* delim) {
     
     FILE* fp = fopen(path, "r");
     if (fp != NULL) {
         char** fields = (char**) malloc(lenght*sizeof(char*));
         char c[2];
         int j = 0;
+        int sem = 0;
         int delim_pos = -1;
         int file_position = 0;
-        int current_field_pos = 1;                
+        int current_field_pos = 1;               
 
         while (fgets(c, sizeof(c), fp) != NULL) {
                        
             file_position++;
-                
-            if (strcmp(c, " ") == 0) {
 
-                for (int i = 0; i < lenght; i++) {
+            if (strcmp(c, "(") == 0) sem = 1;
+            
+            if (strcmp(c, ")") == 0) sem = 0;
+            
+            if (strcmp(c, delim) == 0) {
 
-                    if (field_pos[i] == current_field_pos) {
+                if (sem == 0) {
 
-                        fseek(fp, ++delim_pos, SEEK_SET);
-                        int field_len = file_position - delim_pos - 1;
-                        char* field = (char*) malloc((field_len + 1)*sizeof(char));
+                    for (int i = 0; i < lenght; i++) {
 
-                        if (fgets(field, field_len + 1, fp) == NULL) {
-                            free(field);
+                        if (field_pos[i] == current_field_pos) {
+                                                    
+                            fseek(fp, ++delim_pos, SEEK_SET);
+                            int field_len = file_position - delim_pos - 1;
+                            char* field = (char*) malloc((field_len + 1)*sizeof(char));
+
+                            if (fgets(field, field_len + 1, fp) == NULL) {
+                                free(field);
+                                break;
+                            }
+
+                            fields[j] = strtok(strtok(field, "("), ")");
+                            j++;
+                            fseek(fp, 1, SEEK_CUR);
                             break;
                         }
-
-                        fields[j] = field;
-                        fseek(fp, 1, SEEK_CUR);
-                        j++;
-                        break;
                     }
-                }
+                } else continue;
 
                 current_field_pos++;
                 delim_pos = file_position-1;
             }
-
+            
         }
 
         fclose(fp);
@@ -312,7 +323,7 @@ void get_cpu_stats() {
     char path[MAX_BUFFER_DIM];
     snprintf(path, MAX_BUFFER_DIM, "/proc/stat");
     int field_pos_stat[8] = {3, 4, 5, 6, 7, 8, 9, 10};
-    char** fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int));
+    char** fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int), " ");
 
     unsigned long total_cpu_time = 0;
     for (int i = 0; i < 8; i++) {
@@ -357,7 +368,7 @@ proc_list* listing_proc() {
             char path[MAX_BUFFER_DIM];
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/stat", pid);
             int field_pos_stat[] = {1, 2, 3, 14, 15, 18, 22, 23, 24};
-            char** proc_fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int));
+            char** proc_fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int), " ");
 
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/statm", pid);
 

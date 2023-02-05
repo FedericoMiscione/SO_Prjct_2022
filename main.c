@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
 
 			case'q':
 				printf("Chiusura del programma TOP...\n");
+				list_destroyer(l);
 				return 0;
 
 			case 'h':
