@@ -8,7 +8,7 @@ HEADERS=libs.h
 
 LIBS=libs.a
 
-BINS=process_reader	test
+BINS=process_reader	top
 
 .phony:	clean all
 
@@ -21,6 +21,10 @@ libs.a:	$(OBJS)
 	@echo "Generazione della libreria..."
 	$(AR) -rcs $@ $^
 	rm -rf $(OBJS)
+
+top: main.c $(LIBS)
+	@echo "Compilazione del main in corso..."
+	$(CC) $(CCOPTS) -g -o $@ $^ -lm
 
 process_reader: main.c $(LIBS)
 	@echo "Compilazione del main in corso..."
