@@ -63,6 +63,8 @@
     //struct proc
     /* definiti nel modulo libs.c */
     
+    void initProc(proc* p);
+
     //Restituisce il PID del proc p
     pid_t getPID(const proc* p);
     //Restituisce lo status del proc p
@@ -81,7 +83,7 @@
     void proc_printer(const proc* p);
 
     //Setta i valori degli attributi del proc
-    proc* setProc(char** fields);// proc* setProc(char** fields, char** mem_info);
+    void setProc(proc *p,char** fields);
         
     //struct proc_list
     /*funzioni caratteristiche delle liste*/
@@ -89,7 +91,7 @@
     //Inizializzazione lista vuota
     void list_init(proc_list* l);
     //Ricerca del processo p all'interno della proc_list l
-    proc* proc_finder(const proc_list* l, proc* p, int option);
+    proc* proc_finder(const proc_list* l, pid_t pid);
     //Inserimento in coda del proc p in proc_list l [riportare a void]
     void insert(proc_list* l, proc* p);
     //Rimozione del proc p dalla proc_list l [riportare a void]
@@ -104,7 +106,8 @@
     //Verifica che una directory nel filesystem '/proc' rappresenta un processo
     int is_PIDFolder(char* path, int* pid);
     //Lettura dei campi di interesse con posizione contenuta in field_pos dal file con filename path e separatore delim
-    char** read_fields_from_file(char* path, int* field_pos, int lenght, char* delim);
+    char** create_fields_from_file(char* path, int* field_pos, int lenght, char* delim);
+    int destroy_fields(char** fields,int len);
     //Restituisce la proc_list di tutti i processi presenti nel filesystem '/proc'
     proc_list* listing_proc();    
     //Classifica i processi in base al proprio stato

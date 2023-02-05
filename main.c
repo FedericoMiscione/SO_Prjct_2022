@@ -3,7 +3,7 @@
 int main(int argc, char* argv[]) {
 
 	pid_t pid;
-	proc_list* l = listing_proc();
+	proc_list* l = listing_proc();	//ALLOCAZIONE l
 
 	struct sysinfo info;
     sysinfo(&info);
@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
 	get_sys_info(&info);
 	printf("Tasks: %d -> ", l->size);
 	tasks_info(l);
+	list_destroyer(l);//DEALLOCAZIONE l
 
 	printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
 
@@ -22,7 +23,8 @@ int main(int argc, char* argv[]) {
 		switch (cmd) {
 
 			case '\n':
-				l = listing_proc();
+				
+				l = listing_proc();//ALLOCAZIONE l
 				printf("Top || ");
 				local_time();
 				sysinfo(&info);
@@ -30,28 +32,29 @@ int main(int argc, char* argv[]) {
 				printf("Tasks: %d -> ", l->size);
 				tasks_info(l);
 				printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
-				continue;
+				list_destroyer(l);//DEALLOCAZIONE l
+				break;
 
 			case 'f':
-				l = listing_proc();
+				l = listing_proc();//ALLOCAZIONE l
 				printf("Inserire il PID del processo: ");
-				proc* p = (proc*) malloc(sizeof(proc));
-				scanf("%d", &(p->pid));
-				p = proc_finder(l, p, PID_FNDR);
-				if (p != NULL) proc_printer(p);
-				else printf("Processo non trovato!\n");
-				free(p);
+				scanf("%d", &(pid));
+				proc* p = proc_finder(l, pid);
+				if (p != NULL) 
+					proc_printer(p);
+				else 
+					printf("Processo non trovato!\n");
+				list_destroyer(l);//DEALLOCAZIONE l
 				break;
 
 			case 'p':
-				l = listing_proc();
+				l = listing_proc();//ALLOCAZIONE l
 				list_printer(l);
+				list_destroyer(l);//DEALLOCAZIONE l
 				break;
 
 			case'q':
 				printf("Chiusura del programma TOP...\n");
-				list_destroyer(l);
-				sleep(1);
 				return 0;
 
 			case 'h':

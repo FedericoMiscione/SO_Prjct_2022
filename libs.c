@@ -1,5 +1,13 @@
 #include "libs.h"
 
+
+void initProc(proc* p)
+{
+    p->next = NULL;
+    p->prev = NULL;
+    p->command = NULL;
+}
+
 //Funzione che stampa l'orario attuale
 void local_time () {
     int h, min, sec;
@@ -32,7 +40,9 @@ void get_sys_info(struct sysinfo* info) {
 
     //Raccolta stats di memoria
     int fields_pos[] = {1, 2, 3, 4, 5, 15, 16, 24};
-    char** mem_stats = read_fields_from_file("/proc/meminfo", fields_pos, sizeof(fields_pos)/sizeof(int), "\n");
+    int fields_len = sizeof(fields_pos)/sizeof(int);
+    //ALLOCAZIONE FIELDS
+    char** mem_stats = create_fields_from_file("/proc/meminfo", fields_pos, fields_len, "\n");
 
     //mem stats
     double total_mem = (double) atol(strtok(strtok(strtok(mem_stats[0], "MemTotal:"), "kB"), " "))/ONE_KiB;
@@ -51,6 +61,9 @@ void get_sys_info(struct sysinfo* info) {
     unsigned long avail_mem = atol(strtok(strtok(strtok(mem_stats[2], "MemAvailable:"), "kB"), " "))/ONE_KiB;
     printf("Swap: total %8.2lf MiB, free %8.2lf MiB, used %7.2lf MiB. ", total_swap, free_swap, used_swap);
     printf("Avail Mem: %8.2lf MiB\n", (double) avail_mem);
+
+    //DEALLOCAZIONE
+    destroy_fields(mem_stats,fields_len);
 }
 
 int getPID(const proc* p) {
@@ -88,12 +101,11 @@ void proc_printer(const proc* p) {
                     p->pid, p->status, p->priority, p->vsize, p->rss, p->cpu_u, p->mem_u, p->command);
 }
 
-proc* setProc(char** fields) {
-
-    proc* p = (proc*)malloc(sizeof(proc));
-
+void setProc(proc* p,char** fields) {
     p->pid = atoi(fields[0]);
-    p->command = fields[1];
+    char* command = (char*)malloc(strlen(fields[1])+1);
+    command = strcpy(command,fields[1]);
+    p->command = command;
     p->status = fields[2][0];
     p->priority = atol(fields[5]);
     p->vsize = (strtoul(fields[7], NULL, 0))/ONE_KiB;
@@ -127,7 +139,6 @@ proc* setProc(char** fields) {
     p->rss = proc_mem/ONE_KiB;
     p->mem_u = mem_usage;
     
-    return p;
 }
 
 void list_init(proc_list* l)  {
@@ -154,17 +165,12 @@ void list_printer(proc_list* l) {
 
 }
 
-proc* proc_finder(const proc_list* l, proc* p, int option) {
+proc* proc_finder(const proc_list* l, pid_t pid) {
     proc* tmp = l->head;
     while(tmp) {
-        
-        if (option == NO_OPT) {
-            if (tmp == p) return tmp;
-            tmp = tmp->next;
-        } else if (option == PID_FNDR) {
-            if (tmp->pid == p->pid) return tmp;
-            tmp = tmp->next;
-        }
+        if(tmp->pid == pid)
+            return tmp;
+        tmp = tmp->next;
     }
     return NULL;
 }
@@ -172,7 +178,7 @@ proc* proc_finder(const proc_list* l, proc* p, int option) {
 void insert(proc_list* l, proc* p) {
 
     if (l->size == 0) {
-        l->head = (proc*)malloc(sizeof(proc));
+        //l->head = (proc*)malloc(sizeof(proc));
         l->head = p;
         l->head->next = NULL;
         l->tail = l->head;
@@ -181,13 +187,13 @@ void insert(proc_list* l, proc* p) {
     }
 
     //verifica che il processo non sia contenuto nella lista
-    if (p == proc_finder(l, p, NO_OPT)) {
+    if (p == proc_finder(l, p->pid)) {
         printf("Il processo %d è già all'interno della lista\n", p->pid);
         return;
     }
 
-    proc* tmp = (proc*) malloc(sizeof(proc));
-    tmp = l->tail;
+    //proc* tmp = (proc*) malloc(sizeof(proc));
+    proc* tmp = l->tail;
 
     if (tmp->next == NULL) {
         p->prev = tmp;
@@ -206,11 +212,10 @@ void remove_elem(proc_list* l, proc* p) {
         return;
     }
 
-    proc* tmp = (proc*) malloc(sizeof(proc));
-    tmp = l->head;
+    //proc* tmp = (proc*) malloc(sizeof(proc));
+    proc* tmp = l->head;
 
     while(tmp) {
-
         if (tmp == p) {
             proc* prev = tmp->prev;
             proc* next = tmp->next;
@@ -218,12 +223,12 @@ void remove_elem(proc_list* l, proc* p) {
             if (next != NULL) next->prev = prev;
             if (tmp == l->tail) l->tail = prev;
             l->size--;
+            free(tmp->command);
             free(tmp);
+            return;
         }
         tmp = tmp->next;
     }
-
-    free(tmp);
 }
 
 void list_destroyer(proc_list* l) {
@@ -233,17 +238,19 @@ void list_destroyer(proc_list* l) {
         return;
     }
 
-    proc* tmp = (proc*) malloc(sizeof(proc));
-    tmp = l->head;
-    while(tmp) {
-                     
+    //proc* tmp = (proc*) malloc(sizeof(proc));
+    proc* tmp = l->head;
+    while(tmp) {      
         if (tmp->next == NULL) {
+            proc* prev = tmp->prev;
             remove_elem(l, tmp);
-            if (l->size == 0) l->head = NULL;
-            tmp = tmp->prev;
+            if (l->size == 0) 
+                l->head = NULL;
+            tmp = prev;
         } else tmp = tmp->next;
                
-    } 
+    }
+    free(l); 
 
 }
 
@@ -262,11 +269,11 @@ int is_PIDFolder(char* path, int* pid) {
     return 1;
 }
 
-char** read_fields_from_file(char* path, int* field_pos, int lenght, char* delim) {
+char** create_fields_from_file(char* path, int* field_pos, int lenght, char* delim) {
     
+    char** fields = (char**) malloc(lenght*sizeof(char*));
     FILE* fp = fopen(path, "r");
     if (fp != NULL) {
-        char** fields = (char**) malloc(lenght*sizeof(char*));
         char c[2];
         int j = 0;
         int sem = 0;
@@ -292,14 +299,13 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght, char* delim
                                                     
                             fseek(fp, ++delim_pos, SEEK_SET);
                             int field_len = file_position - delim_pos - 1;
-                            char* field = (char*) malloc((field_len + 1)*sizeof(char));
 
-                            if (fgets(field, field_len + 1, fp) == NULL) {
-                                free(field);
-                                break;
-                            }
+                            char tmp[field_len +1];
+                            fgets(tmp, field_len + 1, fp);
+                            char* stmp = strtok(strtok(tmp, "("), ")");
 
-                            fields[j] = strtok(strtok(field, "("), ")");
+                            char* field = (char*) malloc((strlen(stmp) + 1)*sizeof(char));
+                            fields[j] = strcpy(field,stmp);
                             j++;
                             fseek(fp, 1, SEEK_CUR);
                             break;
@@ -316,15 +322,30 @@ char** read_fields_from_file(char* path, int* field_pos, int lenght, char* delim
         fclose(fp);
         return fields;
     }
-
+    free(fields);
     return NULL;
+}
+
+int destroy_fields(char** fields,int len){
+    if (fields != NULL)
+    {
+        for (int i = len - 1; i >= 0; i--)
+        {
+            free(fields[i]);
+        }
+        free(fields);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 void get_cpu_stats() {
     char path[MAX_BUFFER_DIM];
     snprintf(path, MAX_BUFFER_DIM, "/proc/stat");
     int field_pos_stat[8] = {3, 4, 5, 6, 7, 8, 9, 10};
-    char** fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int), " ");
+    int fields_len = sizeof(field_pos_stat)/sizeof(int);
+    //ALLOCAZIONE FIELDS
+    char** fields = create_fields_from_file(path, field_pos_stat, fields_len, " ");
 
     unsigned long total_cpu_time = 0;
     for (int i = 0; i < 8; i++) {
@@ -344,6 +365,8 @@ void get_cpu_stats() {
 
     printf(" %3.2f us, %3.2f sy, %3.2f ni, %3.2f id, %3.2f wa, %3.2f hi, %3.2f si, %3.2f st\n", user, nice, sys, idle, wait, hi, si, steal);
 
+    //DEALLOCAZIONE
+    destroy_fields(fields,fields_len);
 }
 
 proc_list* listing_proc() {
@@ -368,15 +391,23 @@ proc_list* listing_proc() {
 
             char path[MAX_BUFFER_DIM];
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/stat", pid);
+
             int field_pos_stat[] = {1, 2, 3, 14, 15, 18, 22, 23, 24};
-            char** proc_fields = read_fields_from_file(path, field_pos_stat, sizeof(field_pos_stat)/sizeof(int), " ");
+            int fields_len = sizeof(field_pos_stat)/sizeof(int);
+            //ALLOCAZIONE proc_fields
+            char** proc_fields = create_fields_from_file(path, field_pos_stat, fields_len, " ");
 
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/statm", pid);
 
             if (proc_fields != NULL ) {
-                proc* p = setProc(proc_fields);
+                proc* p = (proc*)malloc(sizeof(proc));
+                initProc(p);
+                setProc(p,proc_fields);
                 insert(l, p);
             }
+
+            //DEALLOCAZIONE proc_fields
+            destroy_fields(proc_fields,fields_len);
         }
     }
 
@@ -390,8 +421,8 @@ void tasks_info(const proc_list* src) {
     int stopped_cnt = 0;
     int zombie_cnt = 0;
 
-    proc* tmp = (proc*) malloc(sizeof(proc));
-    tmp = src->head;
+    //proc* tmp = (proc*) malloc(sizeof(proc));
+    proc* tmp = src->head;
 
     while(tmp) {
         if (tmp->status == 'R') running_cnt++;
