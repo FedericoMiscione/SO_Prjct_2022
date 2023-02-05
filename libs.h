@@ -103,7 +103,7 @@
 
     //Verifica che una directory nel filesystem '/proc' rappresenta un processo
     int is_PIDFolder(char* path, int* pid);
-    //Lettura dei campi di interesse con posizione contenuta in field_pos dal file con filename path 
+    //Lettura dei campi di interesse con posizione contenuta in field_pos dal file con filename path e separatore delim
     char** read_fields_from_file(char* path, int* field_pos, int lenght, char* delim);
     //Restituisce la proc_list di tutti i processi presenti nel filesystem '/proc'
     proc_list* listing_proc();    

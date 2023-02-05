@@ -30,6 +30,7 @@ void get_sys_info(struct sysinfo* info) {
     printf("%%CPU: ");
     get_cpu_stats();
 
+    //Raccolta stats di memoria
     int fields_pos[] = {1, 2, 3, 4, 5, 15, 16, 24};
     char** mem_stats = read_fields_from_file("/proc/meminfo", fields_pos, sizeof(fields_pos)/sizeof(int), "\n");
 
