@@ -300,14 +300,12 @@ char** create_fields_from_file(char* path, int* field_pos, int lenght, char* del
     return NULL;
 }
 
-int destroy_fields(char** fields, int len) {
+void destroy_fields(char** fields, int len) {
     if (fields != NULL) {
         for (int i = len - 1; i >= 0; i--) 
             free(fields[i]);
         free(fields);
-        return TRUE;
     }
-    return FALSE;
 }
 
 void get_cpu_stats() {

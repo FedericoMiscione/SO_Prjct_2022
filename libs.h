@@ -22,9 +22,6 @@
 
 #define TRUE 0
 #define FALSE -1
-//define di possibili option per la funzione proc_finder
-#define NO_OPT -1
-#define PID_FNDR 1
 
 #define MAX_BUFFER_DIM 1024
 
@@ -67,7 +64,6 @@
     void initProc(proc* p);
     //Stampa il proc p
     void proc_printer(const proc* p);
-
     //Setta i valori degli attributi del proc
     void setProc(proc *p,char** fields);
         
@@ -93,7 +89,7 @@
     //L'allocazione del char** ritornato avviene internamente. In caso di fallimento restituisce NULL.
     char** create_fields_from_file(char* path, int* field_pos, int lenght, char* delim);
     //Dealloca i fields creati per la raccolta dei dati dai file
-    int destroy_fields(char** fields, int lenght);
+    void destroy_fields(char** fields, int lenght);
     //Restituisce la proc_list di tutti i processi presenti nel filesystem '/proc'. La proc_list è allocata all'interno del metodo
     proc_list* listing_proc();    
 
