@@ -48,7 +48,6 @@
         proc* head;
         proc* tail;
         int size;
-        char pad[40];        //padding to 64 bit
     } proc_list;
 
 
