@@ -3,7 +3,8 @@
 int main(int argc, char* argv[]) {
 
 	pid_t pid;
-	proc_list* l = listing_proc();	//ALLOCAZIONE l
+	//Allocazione di l internamente al metodo
+	proc_list* l = listing_proc();
 
 	struct sysinfo info;
     sysinfo(&info);
@@ -13,7 +14,9 @@ int main(int argc, char* argv[]) {
 	get_sys_info(&info);
 	printf("Tasks: %d -> ", l->size);
 	tasks_info(l);
-	list_destroyer(l);//DEALLOCAZIONE l
+
+	//Deallocazione di l
+	list_destroyer(l);
 
 	printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
 
@@ -23,38 +26,36 @@ int main(int argc, char* argv[]) {
 		switch (cmd) {
 
 			case '\n':
-				
-				l = listing_proc();//ALLOCAZIONE l
-				printf("Top || ");
+				l = listing_proc();
+				printf("\nTop || ");
 				local_time();
 				sysinfo(&info);
 				get_sys_info(&info);
 				printf("Tasks: %d -> ", l->size);
 				tasks_info(l);
 				printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
-				list_destroyer(l);//DEALLOCAZIONE l
+				list_destroyer(l);
 				break;
 
 			case 'f':
-				l = listing_proc();//ALLOCAZIONE l
+				l = listing_proc();
 				printf("Inserire il PID del processo: ");
 				scanf("%d", &(pid));
+				if (pid == 0) pid = getpid();
 				proc* p = proc_finder(l, pid);
-				if (p != NULL) 
-					proc_printer(p);
-				else 
-					printf("Processo non trovato!\n");
-				list_destroyer(l);//DEALLOCAZIONE l
+				if (p != NULL) proc_printer(p);
+				else printf("Processo non trovato!\n");
+				list_destroyer(l);
 				break;
 
 			case 'p':
-				l = listing_proc();//ALLOCAZIONE l
+				l = listing_proc();
 				list_printer(l);
-				list_destroyer(l);//DEALLOCAZIONE l
+				list_destroyer(l);
 				break;
 
 			case'q':
-				printf("Chiusura del programma TOP...\n");
+				printf("Chiusura del programma TOP...\n\n");
 				return 0;
 
 			case 'h':
@@ -70,11 +71,10 @@ int main(int argc, char* argv[]) {
 
 			case 'k':
 				//KILLING PROCESS
-
 				printf("Inserire il PID del processo: ");
 				scanf("%d", &pid);
 				
-				if (pid == getpid()) {
+				if (pid == getpid() || pid == 0) {
 
 					char opt;
 					printf("Sei sicuro di voler uccidere questo processo? ('y' or 'n') ");
@@ -100,7 +100,6 @@ int main(int argc, char* argv[]) {
 
 			case 'r':
 				//RESTARTING PROCESS
-
 				printf("Inserire il PID del processo: ");
 				scanf("%d", &pid);
 
@@ -116,7 +115,6 @@ int main(int argc, char* argv[]) {
 
 			case 's':
 				//SUSPENDING PROCESS
-
 				printf("Inserire il PID del processo: ");
 				scanf("%d", &pid);
 
@@ -132,7 +130,6 @@ int main(int argc, char* argv[]) {
 
 			case 't':
 				//TERMINATING PROCESS
-
 				printf("Inserire il PID del processo: ");
 				scanf("%d", &pid);
 				

@@ -8,7 +8,7 @@ HEADERS=libs.h
 
 LIBS=libs.a
 
-BINS=process_reader	top
+BINS=top
 
 .phony:	clean all
 
@@ -25,14 +25,6 @@ libs.a:	$(OBJS)
 top: main.c $(LIBS)
 	@echo "Compilazione del main in corso..."
 	$(CC) $(CCOPTS) -g -o $@ $^ -lm
-
-process_reader: main.c $(LIBS)
-	@echo "Compilazione del main in corso..."
-	$(CC) $(CCOPTS) -g -o $@ $^ -lm
-
-# test: test.c $(LIBS)
-# 	@echo "Compilazione del tester in corso..."
-# 	$(CC) $(CCOPTS) -g -o $@ $^ -lm -lncurses
 
 clean:
 	@echo "Pulizia in corso..."

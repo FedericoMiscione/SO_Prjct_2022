@@ -1,13 +1,5 @@
 #include "libs.h"
 
-
-void initProc(proc* p)
-{
-    p->next = NULL;
-    p->prev = NULL;
-    p->command = NULL;
-}
-
 //Funzione che stampa l'orario attuale
 void local_time () {
     int h, min, sec;
@@ -25,23 +17,34 @@ void local_time () {
 void get_sys_info(struct sysinfo* info) {
     
     //uptime
-    unsigned long uptime = info->uptime;
+    int field_pos[] = {1};
+    int fields_len = sizeof(field_pos)/sizeof(int);
+    char** uptime_stats = create_fields_from_file("/proc/uptime", field_pos, fields_len, " ");
+    unsigned long uptime = atol(uptime_stats[0]);
     if (uptime/3600 < 24) printf(" || up %.2ld:%.2ld:%.2ld ||", uptime/3600, (uptime/60)%60, uptime%60);
     else printf(" || up %d days ||", (int) (uptime/3600)/24);
+    destroy_fields(uptime_stats, fields_len);
 
     //load averages
-    double loads[3];
-    getloadavg(loads, 3);
-    printf(" load averages: %.2f, %.2f, %.2f ||\n", loads[0], loads[1], loads[2]);
-    
+    int loads_pos[] = {1, 2, 3};
+    fields_len = sizeof(loads_pos)/sizeof(int);
+    char** loadavg_stats = create_fields_from_file("/proc/loadavg", loads_pos, fields_len, " ");
+    printf(" load averages: ");
+    for (int i = 0; i < fields_len; i++) {
+        double load = (double) atof(loadavg_stats[i]); 
+        printf("%.2f, ", load);
+    }
+    printf("||\n");
+    destroy_fields(loadavg_stats, fields_len);
+
     //cpu stats
     printf("%%CPU: ");
     get_cpu_stats();
 
     //Raccolta stats di memoria
     int fields_pos[] = {1, 2, 3, 4, 5, 15, 16, 24};
-    int fields_len = sizeof(fields_pos)/sizeof(int);
-    //ALLOCAZIONE FIELDS
+    fields_len = sizeof(fields_pos)/sizeof(int);
+    //Allocazione di mem_stats avviene internamente al metodo
     char** mem_stats = create_fields_from_file("/proc/meminfo", fields_pos, fields_len, "\n");
 
     //mem stats
@@ -62,42 +65,19 @@ void get_sys_info(struct sysinfo* info) {
     printf("Swap: total %8.2lf MiB, free %8.2lf MiB, used %7.2lf MiB. ", total_swap, free_swap, used_swap);
     printf("Avail Mem: %8.2lf MiB\n", (double) avail_mem);
 
-    //DEALLOCAZIONE
-    destroy_fields(mem_stats,fields_len);
+    //Deallocazione di mem_stats
+    destroy_fields(mem_stats, fields_len);
 }
 
-int getPID(const proc* p) {
-    return p->pid;
-}
-
-char getStatus(const proc* p) {
-    return p->status;
-}
-
-long getPriority(const proc* p) {
-    return p->priority;
-}
-
-float getCPUUsage(const proc* p) {
-    return p->cpu_u;
-}
-
-float getMemUsage(const proc* p) {
-    return p->mem_u;
-}
-
-proc* getPrev(const proc* p) {
-    if (p->prev) return p->prev;
-    else return NULL;
-}
-
-proc* getNext(const proc* p) {
-    if (p->next) return p->next;
-    else return NULL;
+void initProc(proc* p)
+{
+    p->command = NULL;
+    p->next = NULL;
+    p->prev = NULL;
 }
 
 void proc_printer(const proc* p) {
-    printf("\nPID: %5d | status: %2c | priority: %5ld | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n\n", 
+    printf("\nPID: %5d | status: %2c | priority: %5ld | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %s\n\n", 
                     p->pid, p->status, p->priority, p->vsize, p->rss, p->cpu_u, p->mem_u, p->command);
 }
 
@@ -147,15 +127,13 @@ void list_init(proc_list* l)  {
     l->size = 0;
 }
 
-//DA MODIFICARE
-//Aggiungere/rimuovere elementi rilevanti/non rilevanti per il programma e eventualmente cambiare precisione dei float
 void list_printer(proc_list* l) {
     if (l->size == 0) {
         printf("La lista è vuota...\n\n");
     } else {
         proc* tmp = l->head;
         while(tmp) {
-            printf("PID: %5d | status: %2c | priority: %5ld | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %20s\n", 
+            printf("PID: %5d | status: %2c | priority: %5ld | virt: %10lu KiB | rss: %10ld KiB | cpu_u: %5.2f %% | mem_u: %5.2f %% | command: %s\n", 
                     tmp->pid, tmp->status, tmp->priority, tmp->vsize, tmp->rss, tmp->cpu_u, tmp->mem_u, tmp->command);
             tmp = tmp->next;
         }
@@ -178,7 +156,6 @@ proc* proc_finder(const proc_list* l, pid_t pid) {
 void insert(proc_list* l, proc* p) {
 
     if (l->size == 0) {
-        //l->head = (proc*)malloc(sizeof(proc));
         l->head = p;
         l->head->next = NULL;
         l->tail = l->head;
@@ -192,7 +169,6 @@ void insert(proc_list* l, proc* p) {
         return;
     }
 
-    //proc* tmp = (proc*) malloc(sizeof(proc));
     proc* tmp = l->tail;
 
     if (tmp->next == NULL) {
@@ -212,7 +188,6 @@ void remove_elem(proc_list* l, proc* p) {
         return;
     }
 
-    //proc* tmp = (proc*) malloc(sizeof(proc));
     proc* tmp = l->head;
 
     while(tmp) {
@@ -238,7 +213,6 @@ void list_destroyer(proc_list* l) {
         return;
     }
 
-    //proc* tmp = (proc*) malloc(sizeof(proc));
     proc* tmp = l->head;
     while(tmp) {      
         if (tmp->next == NULL) {
@@ -326,13 +300,10 @@ char** create_fields_from_file(char* path, int* field_pos, int lenght, char* del
     return NULL;
 }
 
-int destroy_fields(char** fields,int len){
-    if (fields != NULL)
-    {
-        for (int i = len - 1; i >= 0; i--)
-        {
+int destroy_fields(char** fields, int len) {
+    if (fields != NULL) {
+        for (int i = len - 1; i >= 0; i--) 
             free(fields[i]);
-        }
         free(fields);
         return TRUE;
     }
@@ -344,7 +315,8 @@ void get_cpu_stats() {
     snprintf(path, MAX_BUFFER_DIM, "/proc/stat");
     int field_pos_stat[8] = {3, 4, 5, 6, 7, 8, 9, 10};
     int fields_len = sizeof(field_pos_stat)/sizeof(int);
-    //ALLOCAZIONE FIELDS
+    
+    //Allocazione di fields interna al metodo
     char** fields = create_fields_from_file(path, field_pos_stat, fields_len, " ");
 
     unsigned long total_cpu_time = 0;
@@ -365,8 +337,8 @@ void get_cpu_stats() {
 
     printf(" %3.2f us, %3.2f sy, %3.2f ni, %3.2f id, %3.2f wa, %3.2f hi, %3.2f si, %3.2f st\n", user, nice, sys, idle, wait, hi, si, steal);
 
-    //DEALLOCAZIONE
-    destroy_fields(fields,fields_len);
+    //Deallocazione di fields
+    destroy_fields(fields, fields_len);
 }
 
 proc_list* listing_proc() {
@@ -394,7 +366,7 @@ proc_list* listing_proc() {
 
             int field_pos_stat[] = {1, 2, 3, 14, 15, 18, 22, 23, 24};
             int fields_len = sizeof(field_pos_stat)/sizeof(int);
-            //ALLOCAZIONE proc_fields
+            //Allocazione di proc_fields avviene internamente al metodo
             char** proc_fields = create_fields_from_file(path, field_pos_stat, fields_len, " ");
 
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/statm", pid);
@@ -406,8 +378,8 @@ proc_list* listing_proc() {
                 insert(l, p);
             }
 
-            //DEALLOCAZIONE proc_fields
-            destroy_fields(proc_fields,fields_len);
+            //Deallocazione proc_fields
+            destroy_fields(proc_fields, fields_len);
         }
     }
 
@@ -421,7 +393,6 @@ void tasks_info(const proc_list* src) {
     int stopped_cnt = 0;
     int zombie_cnt = 0;
 
-    //proc* tmp = (proc*) malloc(sizeof(proc));
     proc* tmp = src->head;
 
     while(tmp) {
