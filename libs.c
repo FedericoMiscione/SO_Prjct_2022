@@ -381,7 +381,10 @@ proc_list* listing_proc() {
         }
     }
 
-    closedir(dir);
+    if (closedir(dir) == -1) {
+        print_error("Errore");
+    }
+    
     return l;
 }
 
