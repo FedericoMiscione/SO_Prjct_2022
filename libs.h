@@ -20,9 +20,6 @@
 
 #include <time.h>
 
-#define TRUE 0
-#define FALSE -1
-
 #define MAX_BUFFER_DIM 1024
 
 #define ONE_KiB 1024         // 1 KiB
