@@ -6,9 +6,6 @@ int main(int argc, char* argv[]) {
 	//Allocazione di l internamente al metodo
 	proc_list* l = listing_proc();
 
-	struct sysinfo info;
-    sysinfo(&info);
-
 	printf("Top || ");
 	local_time();
 	get_sys_info();
@@ -29,7 +26,6 @@ int main(int argc, char* argv[]) {
 				l = listing_proc();
 				printf("\nTop || ");
 				local_time();
-				sysinfo(&info);
 				get_sys_info();
 				printf("Tasks: %d -> ", l->size);
 				tasks_info(l);

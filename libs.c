@@ -1,16 +1,12 @@
 #include "libs.h"
 
 void local_time () {
-    int h, min, sec;
     time_t t;
     //orario attuale
     time(&t);
     //orario locale
     struct tm* loc_t = localtime(&t);
-    h = loc_t->tm_hour;
-    min = loc_t->tm_min;
-    sec = loc_t->tm_sec;
-    printf("%02d:%02d:%02d", h, min, sec);
+    printf("%02d:%02d:%02d", loc_t->tm_hour, loc_t->tm_min, loc_t->tm_sec);
 }
 
 void get_sys_info() {
