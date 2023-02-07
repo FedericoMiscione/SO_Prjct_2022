@@ -1,6 +1,5 @@
 #include "libs.h"
 
-//Funzione che stampa l'orario attuale
 void local_time () {
     int h, min, sec;
     time_t t;
@@ -14,7 +13,7 @@ void local_time () {
     printf("%02d:%02d:%02d", h, min, sec);
 }
 
-void get_sys_info(struct sysinfo* info) {
+void get_sys_info() {
     
     //uptime
     int field_pos[] = {1};
@@ -99,16 +98,16 @@ void setProc(proc* p,char** fields) {
     unsigned long ttime = utime + stime;                            // Moltiplicato x100 per riportare il valore in percentuale
     double ttime_s = ttime/clk_tck;                                 // Tempo totale del processo in secondi
 
-    unsigned long uptime = info.uptime;                             // uptime in secondi
+    unsigned long uptime = (&info)->uptime;                         // uptime in secondi
     unsigned long long start_time = strtoull(fields[6], NULL, 0);   // (*)
-    double start_time_s = start_time/clk_tck;                       // start time del processo in
+    double start_time_s = start_time/clk_tck;                       // start time del processo in secondi
     unsigned long elapsed_time = uptime - start_time_s;
 
     double cpu_usage = (double) ttime_s / (double) elapsed_time;
     cpu_usage*=100;
     p->cpu_u = cpu_usage;
 
-    long int total_mem = (long int) info.totalram;
+    long int total_mem = (long int) (&info)->totalram;
 
     int page_size = getpagesize();
     long long int proc_pages = atol(fields[8]);

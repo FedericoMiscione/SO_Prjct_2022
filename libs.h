@@ -92,7 +92,7 @@
     //Stampa l'ora locale
     void local_time();
     //Stampa le informazioni di sistema [uptime, mem stats, swap stats]
-    void get_sys_info(struct sysinfo *info);
+    void get_sys_info();
     //Stampa le statistiche riguardanti la CPU
     void get_cpu_stats();
     //Classifica i processi in base al proprio stato

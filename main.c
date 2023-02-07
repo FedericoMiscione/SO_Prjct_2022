@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 
 	printf("Top || ");
 	local_time();
-	get_sys_info(&info);
+	get_sys_info();
 	printf("Tasks: %d -> ", l->size);
 	tasks_info(l);
 
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 				printf("\nTop || ");
 				local_time();
 				sysinfo(&info);
-				get_sys_info(&info);
+				get_sys_info();
 				printf("Tasks: %d -> ", l->size);
 				tasks_info(l);
 				printf("Comando (1 carattere) ['h' per vedere l'elenco dei comandi]: ");
