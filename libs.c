@@ -362,8 +362,6 @@ proc_list* listing_proc() {
             //Allocazione di proc_fields avviene internamente al metodo
             char** proc_fields = create_fields_from_file(path, field_pos_stat, fields_len, " ");
 
-            snprintf(path, MAX_BUFFER_DIM, "/proc/%d/statm", pid);
-
             if (proc_fields != NULL ) {
                 proc* p = (proc*)malloc(sizeof(proc));
                 initProc(p);
