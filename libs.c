@@ -82,8 +82,8 @@ void setProc(proc* p,char** fields) {
     command = strcpy(command,fields[1]);
     p->command = command;
     p->status = fields[2][0];
-    p->priority = atol(fields[5]);
-    p->vsize = (strtoul(fields[7], NULL, 0))/ONE_KiB;
+    p->priority = atol(fields[7]);
+    p->vsize = (strtoul(fields[9], NULL, 0))/ONE_KiB;
 
     struct sysinfo info;
     sysinfo(&info);
@@ -91,11 +91,14 @@ void setProc(proc* p,char** fields) {
 
     unsigned long utime = strtoul(fields[3], NULL, 0);              // (*) base = 0 implica conversione in decimale
     unsigned long stime = strtoul(fields[4], NULL, 0);              // (*)
-    unsigned long ttime = utime + stime;                            // Moltiplicato x100 per riportare il valore in percentuale
+    long cutime = atol(fields[5]);
+    long cstime = atol(fields[6]);
+    unsigned long ctime = (unsigned long) (cutime + cstime);
+    unsigned long ttime = utime + stime + ctime;                    // Moltiplicato x100 per riportare il valore in percentuale
     double ttime_s = ttime/clk_tck;                                 // Tempo totale del processo in secondi
 
     unsigned long uptime = (&info)->uptime;                         // uptime in secondi
-    unsigned long long start_time = strtoull(fields[6], NULL, 0);   // (*)
+    unsigned long long start_time = strtoull(fields[8], NULL, 0);   // (*)
     double start_time_s = start_time/clk_tck;                       // start time del processo in secondi
     unsigned long elapsed_time = uptime - start_time_s;
 
@@ -106,7 +109,7 @@ void setProc(proc* p,char** fields) {
     long int total_mem = (long int) (&info)->totalram;
 
     int page_size = getpagesize();
-    long long int proc_pages = atol(fields[8]);
+    long long int proc_pages = atol(fields[10]);
     long long int proc_mem = page_size*proc_pages;
 
     double mem_usage = 0;
@@ -357,7 +360,7 @@ proc_list* listing_proc() {
             char path[MAX_BUFFER_DIM];
             snprintf(path, MAX_BUFFER_DIM, "/proc/%d/stat", pid);
 
-            int field_pos_stat[] = {1, 2, 3, 14, 15, 18, 22, 23, 24};
+            int field_pos_stat[] = {1, 2, 3, 14, 15, 16, 17, 18, 22, 23, 24};
             int fields_len = sizeof(field_pos_stat)/sizeof(int);
             //Allocazione di proc_fields avviene internamente al metodo
             char** proc_fields = create_fields_from_file(path, field_pos_stat, fields_len, " ");
